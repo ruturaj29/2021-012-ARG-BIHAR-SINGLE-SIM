@@ -394,7 +394,7 @@ int main()
 		}
 	}	
 	
-//	Config_Module_for_RI_Interrupt();
+	Config_Module_for_RI_Interrupt();
 //	while(1);
 	
 	if (returnStatus) {
@@ -424,18 +424,7 @@ int main()
 			Module_deactivateBearerProfile();	/* Deactivate the PDP context of the module */
 			DELAY_ms(200);
 		}
-														
-   
-				  
-																												  
-					
-							 
-							  
-																																																												 
-																																													  
-																																		  
-														 
-   
+																																								
 		else {	/* PDP context activating failed */
 					WDT_Feed();	
 					ShutDownModule();			/* MCU GPIO PIN HIGH to OFF the regulator*/

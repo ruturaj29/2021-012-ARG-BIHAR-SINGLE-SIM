@@ -949,8 +949,8 @@ bool modemCheck_initialization(char* _APN) /* Connect to GPRS */
 		WDT_Feed();
 		
 		print_DebugMsg("\r\n");
-		print_DebugMsg("AT+QIACT=1\r"); //To open a GPRS context.
-		UART1_TxString("AT+QIACT=1\r"); //To open a GPRS context.
+		print_DebugMsg("AT+QIACT=1\r"); //To open a GPRS context.  AT+QIACT=1\r
+		UART1_TxString("AT+QIACT=1\r"); //To open a GPRS context.	 AT+QIACT=1\r
 		responseStatus = WaitForExpectedResponse("OK",120000);
 		
 		if(!responseStatus)
@@ -1361,7 +1361,7 @@ bool MODEMGetAPN()   /* Get Service provider name for SIM */
 			}
 			else if (strstr(UART1Buffer,"Jio") !=NULL)
 			{
-				APN = "Jionet";
+				APN = "jiociot";  //Jionet
 				if(LCD_Enable){
 				LCD_Clear();
     		LCD_Printf("Operator:\nJio 4G");
@@ -1714,8 +1714,8 @@ bool Module_PDP_Activation(void)
 {	
 	WDT_Feed();
 	print_DebugMsg("\r\n");
-	print_DebugMsg("AT+QIACT=1\r"); /* PDP Activate  */
-	UART1_TxString("AT+QIACT=1\r"); 
+	print_DebugMsg("AT+QIACT=1\r"); /* PDP Activate  */  // AT+QIACT=1\r
+	UART1_TxString("AT+QIACT=1\r"); 										 // AT+QIACT=1\r
 	return WaitForExpectedResponse("OK",120000);
 }
 
@@ -2216,11 +2216,11 @@ void GSM_Msg_Read(int position)
 {
 	char read_cmd[10];
 	Buffer_Flush();				//Updated
-	sprintf(read_cmd,"AT+CMGR=%d\r\n",position);
+	sprintf(read_cmd,"AT+CMGR=%d\r\n",position);      //\r\n
 	print_DebugMsg(read_cmd);
 	UART1_TxString(read_cmd);		/* read message at specified location/position */
 	DELAY_ms(25);
-	WaitForExpectedResponse("+CMGR",3000);
+	WaitForExpectedResponse("\n+CMGR",3000);
 	print_DebugMsg("\r\n ---- print the read SMS on terminal ---- \r\n");
 	GSM_Msg_Display();		/* display message */
 }
@@ -2243,6 +2243,16 @@ void GSM_Msg_Display(void)
 	print_DebugMsg("Before Comparing content of EC20(UART1) Buffer :");
 	print_DebugMsg(UART1Buffer);
 	print_DebugMsg("\r\n");
+	
+//	/*------------------Saving SMS in Err Log----------------------*/
+//	memset(_ErrorLogBuffer,0,512);	/* Clear the Buffer */
+//	RTC_GetDateTime(&rtc);					/* Get RTC time and Date*/
+//	/* Combine the string */
+//	sprintf(_ErrorLogBuffer,"[%02d/%02d/%d;%02d:%02d]:[SMS]:MESSAGE DETAIL: [%s];SMS;",
+//	(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,UART1Buffer);
+//	Createlog(_ErrorLogBuffer, "err.txt");	/* Save packet to Errorlog - for reference*/
+//	/*------------------Saving SMS in Err Log----------------------*/
+	
 	if(!(strstr(UART1Buffer,",")))		/*check for +CMGR response */  //2.2.2 "UNREAD"
 	{
 		print_DebugMsg("No message\r\n");
@@ -2594,7 +2604,18 @@ void readSMS(void)
 				choice = 8;
 			if((strstr(message_received,"SlaveNUM2")))
 				choice = 9;
-			
+			if((strstr(message_received,"WHOU")))
+				choice = 10;
+			if((strstr(message_received,"WHOA")))
+				choice = 11;
+			if((strstr(message_received,"WHOI")))
+				choice = 12;
+			if((strstr(message_received,"WHOM")))
+				choice = 13;
+			if((strstr(message_received,"WHOS1")))
+				choice = 14;
+			if((strstr(message_received,"WHOS2")))
+				choice = 15;
 			
 
 			WDT_Feed();
@@ -2755,7 +2776,87 @@ void readSMS(void)
 	  						DELAY_ms(2000);
 								}
                 break;
-
+								
+				case 10:
+								print_DebugMsg("\r\n Case 10 WHOU Executed \r\n");
+								//SMSDefaultSetting();
+								//GSM_Send_Msg("9890799318",_buffer);
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("CurrentURL:%s Sending to:%s \n\r",URLbuffer,master_Number);  //master_Mobile_no
+								GSM_Send_Msg(master_Number,URLbuffer);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+								
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("URL Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;
+				case 11:
+								print_DebugMsg("\r\n Case 11 WHOA Executed \r\n");
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("CurrentAPN:%s Sending to:%s \n\r",_apnBuffer,master_Number); //master_Mobile_no
+								GSM_Send_Msg(master_Number,_apnBuffer);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+				
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("APN Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;
+				case 12:
+								print_DebugMsg("\r\n Case 12 WHOI Executed \r\n");
+								memset(_SMS_Buffer,0,512);
+								sprintf(_SMS_Buffer,"%s|%s|%s",_logInterval,_PacketlogInterval,_PacketsendInterval);
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("CurrentIntervals:%s Sending to:%s \n\r",_SMS_Buffer,master_Number);  //master_Mobile_no
+								GSM_Send_Msg(master_Number,_SMS_Buffer);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+								
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("INTRVL Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;
+				case 13:
+								print_DebugMsg("\r\n Case 13 WHOM Executed \r\n");
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("Current Master Number:%s Sending to:%s \n\r",master_Number,master_Number); //master_Mobile_no
+								GSM_Send_Msg(master_Number,master_Number);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+				
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("Master Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;	
+				case 14:
+								print_DebugMsg("\r\n Case 14 WHOS1 Executed \r\n");
+								EEPROM_ReadString(eeprom_address_slave_number1,slave_Number1);
+								console_log("Eeprom Read slave_Number1: %s \n\r",slave_Number1);
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("Current Slave Number1:%s Sending to:%s \n\r",slave_Number1,master_Number); ////master_Mobile_no
+								GSM_Send_Msg(master_Number,slave_Number1);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+				
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("Slave1 Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;
+				case 15:
+								print_DebugMsg("\r\n Case 15 WHOS2 Executed \r\n");
+								EEPROM_ReadString(eeprom_address_slave_number2,slave_Number2);
+								console_log("Eeprom Read slave_Number2: %s \n\r",slave_Number2);
+								EEPROM_ReadString(eeprom_address_master_number,master_Number);
+								console_log("Current Slave Number2:%s Sending to:%s \n\r",slave_Number2,master_Number);  //master_Mobile_no
+								GSM_Send_Msg(master_Number,slave_Number2);
+								GSM_Msg_Delete(MSG_indx);	/* Dlete the msg */
+				
+								if(LCD_Enable){
+								LCD_GoToLine(1);LCD_Printf("Slave2 Sent ");
+	  						DELAY_ms(2000);
+                }
+								break;
 				default:	
 					        if(LCD_Enable){
 										LCD_GoToLine(1);LCD_Printf("No Update");
@@ -2800,35 +2901,35 @@ void Config_Module_for_RI_Interrupt(void)
 	DELAY_ms(500);
 	
 	
-	print_DebugMsg("AT+QCFG=\"apready\"\r");
-	UART1_TxString("AT+QCFG=\"apready\"\r");
-	WaitForExpectedResponse("OK",3000);
-	DELAY_ms(500);
-	
-//	print_DebugMsg("AT+QCFG=\"apready\",1,0,800\r");
-//	UART1_TxString("AT+QCFG=\"apready\",1,0,800\r");
+//	print_DebugMsg("AT+QCFG=\"apready\"\r");
+//	UART1_TxString("AT+QCFG=\"apready\"\r");
 //	WaitForExpectedResponse("OK",3000);
 //	DELAY_ms(500);
+	
+	print_DebugMsg("AT+QCFG=\"apready\",1,0,800\r");
+	UART1_TxString("AT+QCFG=\"apready\",1,0,800\r");
+	WaitForExpectedResponse("OK",3000);
+	DELAY_ms(500);
 	
 	print_DebugMsg("AT+QCFG=\"risignaltype\"\r");
 	UART1_TxString("AT+QCFG=\"risignaltype\"\r");
 	WaitForExpectedResponse("OK",3000);
 	DELAY_ms(500);
 	
-//	print_DebugMsg("AT+QCFG=\"risignaltype\",\"respective\"\r");
-//	UART1_TxString("AT+QCFG=\"risignaltype\",\"respective\"\r");
-//	WaitForExpectedResponse("OK",3000);
-//	DELAY_ms(500);
-
-	print_DebugMsg("AT+QCFG=\"urc/ri/smsincoming\"\r");
-	UART1_TxString("AT+QCFG=\"urc/ri/smsincoming\"\r");
+	print_DebugMsg("AT+QCFG=\"risignaltype\",\"physical\"\r");
+	UART1_TxString("AT+QCFG=\"risignaltype\",\"physical\"\r");
 	WaitForExpectedResponse("OK",3000);
 	DELAY_ms(500);
-	
-//	print_DebugMsg("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\"\r");
-//	UART1_TxString("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\"\r");
+
+//	print_DebugMsg("AT+QCFG=\"urc/ri/smsincoming\"\r");
+//	UART1_TxString("AT+QCFG=\"urc/ri/smsincoming\"\r");
 //	WaitForExpectedResponse("OK",3000);
 //	DELAY_ms(500);
+	
+	print_DebugMsg("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",500\r");
+	UART1_TxString("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",500\r");
+	WaitForExpectedResponse("OK",3000);
+	DELAY_ms(500);
 	
 }
 

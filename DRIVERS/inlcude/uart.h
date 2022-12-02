@@ -40,7 +40,7 @@ void UART1_IRQHandler( void );
 void UART3_IRQHandler( void );
 //void UARTSend( uint32_t portNum, uint8_t *BufferPtr, uint32_t Length );
 
-#define DEBUG_ENABLE       0
+#define DEBUG_ENABLE       1
 
 #if (DEBUG_ENABLE == 1) 
 #define print_DebugMsg(strPtr)  UART2_TxString(strPtr);
