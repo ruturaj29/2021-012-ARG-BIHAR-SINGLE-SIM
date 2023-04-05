@@ -311,7 +311,7 @@ void LCD_ScrollDisplay(void)
 									LCD_GoToLine(0);LCD_Printf("+++ Test log +++");
 									LCD_GoToLine(1);LCD_Printf("Uploading...");
 									sampleTestlog();											/* send test packet to server */
-									RTC_WriteGPREG(2,0);    //Clear RTC reg 2 to make rain 0 while first start
+									//RTC_WriteGPREG(2,0);    //Clear RTC reg 2 to make rain 0 while first start
 								}
 							}
 							DELAY_ms(500);

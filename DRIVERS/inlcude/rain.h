@@ -27,6 +27,7 @@ void calcRainFall(void);
 void _24hr_RainFall(void);
 void Yearly_Rain(void);
 void Reset24HrRainAt8_16(void);
+void Reset24HrRainIfBattLow(void);
 
 
 

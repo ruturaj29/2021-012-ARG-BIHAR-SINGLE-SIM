@@ -16,6 +16,8 @@
 #include "gpio.h"
 #include "IOExtInt.h"
 #include "eeprom.h"
+#include "Log.h"
+#include "mmc_176x_ssp.h"
 
 /************** Globle Variable Declerations *********************/
 char _Rain[8] = { 0 }, _LCDRain[8] = { 0 } , _PeriodicRain[8] = { 0 };
@@ -26,7 +28,7 @@ uint32_t checkvalue, detector;
 /************** EEPROM related variables *********************/
 uint32_t   eeprom_address_Rain = 0x23; //Next address should be 0x24
 
-
+extern char _buffer[512];
 /*****************************************************************
 *         External Interrupt Rain Guage - sensor       					 *
 ******************************************************************/
@@ -87,6 +89,24 @@ void calcRainFall(void)
 //		LCDnumTipsRain = 0;
 //		LCDrain = 0;
 //	}
+
+		if(rtc.hour == 8 && (rtc.min == 15 || rtc.min == 16|| rtc.min == 17 || rtc.min == 18 || rtc.min == 19 || rtc.min == 20 || rtc.min == 21 || rtc.min == 22 || rtc.min == 23 || rtc.min == 24))
+			{
+				RTC_GetDateTime(&rtc);
+				memset(_buffer, 0, 512);
+				sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:RL_BEFORE_RAIN_RESET:8_30:CumRain = %4s;",
+						(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,_Rain);
+				Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+				//print_DebugMsg(" BATTERY LOW \n\r");
+					
+					Reset24HrRainAt8_16();
+					
+				RTC_GetDateTime(&rtc);
+				sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:RL_AFTER_RAIN_RESET:8_30:CumRain = %4s;",
+						(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,_Rain);
+				Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+			}
+
 }
 
 void Reset24HrRainAt8_16(void)
@@ -97,7 +117,35 @@ void Reset24HrRainAt8_16(void)
 		//EEPROM_WriteByte(eeprom_address_Rain, rain);
 		LCDnumTipsRain = 0;
 		LCDrain = 0;
+
 }
+
+void Reset24HrRainIfBattLow(void)
+{
+		rtc_t rtc;
+		RTC_GetDateTime(&rtc);
+		console_log("Enter IN BATEERY_LOW_RTC_FLAG_RESET_LOOP = %2f\n\r",RTC_ReadGPREG(0));
+		if ( (RTC_ReadGPREG(0) == 1) && ( rtc.hour > 8) && (rtc.min > 0) )
+		{
+				print_DebugMsg(" Reset24HrRainIfBattLow Function Called \n\r");
+				rain = 0;
+				RTC_WriteGPREG(2,0);   // RTC GPREG will reset as it contains rain value
+				//EEPROM_WriteByte(eeprom_address_Rain, rain);
+				LCDnumTipsRain = 0;
+				LCDrain = 0;
+			  RTC_WriteGPREG(0,0); //Battery Low flag reset as it
+			
+				RTC_GetDateTime(&rtc);
+				sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:Rain_Reset_BattLo:Flag = %f:CumRain = %4s;",
+						(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,RTC_ReadGPREG(0),_Rain);
+				Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+		}
+		else
+		{
+		  console_log("No Rain Reset Due To Batt Low as Flag = %2f\n\r",RTC_ReadGPREG(0));
+		}
+}
+
 
 
 /*****************************************************************

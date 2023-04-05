@@ -1517,6 +1517,7 @@ uint8_t HTTP_Post(char* Parameters, char input_time, char read_time )
 			if(LCD_Enable){
 			LCD_Clear();
 			LCD_Printf("Post Success !!");
+			ERROR_CODE = 99;
 			}
 			return true;
 		}

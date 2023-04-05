@@ -44,6 +44,7 @@ extern uint32_t   eeprom_address_TH1, eeprom_address_TH2,
                   eeprom_address_slave_number2,
 									eeprom_address_Rain;
 extern double rain;
+extern char _Rain[8];
 extern int  MaxRain_threshold_val1 , MaxRain_threshold_val2 ;
 extern char master_Number[20];
 extern char slave_Number1[20];
@@ -58,12 +59,12 @@ extern uint32_t detector;
 /*********** set Interrupt Priority function ***************************/
 void NVIC_SetPriorities( void )
 {
-	NVIC_SetPriority(UART1_IRQn,0); // gsm comm uart
+	NVIC_SetPriority(UART1_IRQn,0); // gsm comm uart //0 Def
 	//NVIC_SetPriority(UART0_IRQn,1); // sonic sensor
 	NVIC_SetPriority(RTC_IRQn  ,2);	// one minute alarm interrupt
 	//NVIC_SetPriority(EINT3_IRQn,3);	// Ext interrupt 3 - rainguage
 	//NVIC_SetPriority(EINT2_IRQn,4);	// Ext interrupt 0 - cup anemmometer
-	NVIC_SetPriority(EINT1_IRQn,5);	// Ext interrupt 1 - button	
+	NVIC_SetPriority(EINT1_IRQn,5);	// Ext interrupt 1 - button	 // 5 Def
 
 	/* Enable IRQ routiens */
 	NVIC_EnableIRQ(RTC_IRQn);				// Enable RTC IRQ routine
@@ -485,8 +486,11 @@ int main()
 							 
 							 
 			   
+ console_log("BATEERY_LOW_RTC_FLAG = %f\n\r",RTC_ReadGPREG(0));
+ Reset24HrRainIfBattLow();
  
- 
+ Read_ADCchannels();									/* Read Battery voltage and Solar voltage */
+ DELAY_ms(2000);
 /**************************************************************************************************/
 	while(1) 
 	{
@@ -570,12 +574,27 @@ int main()
 				//Slog();				Slog Deactivated
 				if(rtc.hour == 8 && rtc.min == 17)
 				{
+					RTC_GetDateTime(&rtc);
+					memset(_buffer, 0, 512);
+					sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:ML_BEFORE_RAIN_RESET:8_30:CumRain = %4s;",
+							(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,_Rain);
+					Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+					//print_DebugMsg(" BATTERY LOW \n\r");
+					
 						Reset24HrRainAt8_16();
+					
+					RTC_GetDateTime(&rtc);
+					sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:ML_AFTER_RAIN_RESET:8_30:CumRain = %4s;",
+							(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,_Rain);
+					Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+
 				}
 			}
 
 			if (rtc.min % PacketlogInterval == 0) {
+				EINT_AttachInterrupt(EINT3,myExtIntrIsr_3,FALLING);
 				PacketLog();
+				
 			}
 
 			if ((rtc.min % PacketsendInterval == 0)  && (volt0 > 1.55) ) {
@@ -611,6 +630,18 @@ int main()
 				Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
 				print_DebugMsg(" BATTERY LOW \n\r");
 				_LogBatteryLog = 0; 			/* One time write excuted in sd card error log */
+				RTC_WriteGPREG(0,1); /* Battery low flag set in RTC  register 0  */
+				console_log("BATEERY_LOW_RTC_FLAG = %2f\n\r",RTC_ReadGPREG(0));
+				if( (rtc.hour == 8 ) && ( rtc.min > 15 ) && ( rtc.min < 29 ) )
+				{
+					print_DebugMsg(" BATTERY LOW 24RSTLOOP\n\r");
+					Reset24HrRainAt8_16();
+					
+					RTC_GetDateTime(&rtc);
+					sprintf(_buffer,"[%02d/%02d/%d;%02d:%02d]:[ERROR]:BL_AFTER_RAIN_RESET:8_30:CumRain = %4s;",
+						(uint16_t)rtc.date,(uint16_t)rtc.month,(uint16_t)rtc.year,(uint16_t)rtc.hour,(uint16_t)rtc.min,_Rain);
+					Createlog(_buffer, "err.txt");	/* Save log as a error - for reference */
+				}	
 			}
 /**************************************************************************************************/
 	  }

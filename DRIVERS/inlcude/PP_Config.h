@@ -56,7 +56,7 @@ extern "C" {
  */
  
 #if ARG_BIHAR
-#define _FIRMWARE_STRING__  "ARG.2.4"
+#define _FIRMWARE_STRING__  "ARG.2.4.6"
 #endif
  
 #if ARG_BIHAR

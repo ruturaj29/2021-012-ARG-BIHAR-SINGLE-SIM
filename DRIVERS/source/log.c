@@ -443,6 +443,10 @@ void PacketLog ( void )
 			}
 		
 /***********************************************************************************************/
+			console_log("MODEM_RESPONSE_TIMEOUT = %d \n\r",MODEM_RESPONSE_TIMEOUT);
+			console_log("responseStatus = %d \n\r",responseStatus);
+			console_log("MODEM_RESPONSE_ERROR = %d \n\r",MODEM_RESPONSE_ERROR);
+			console_log("ERROR_CODE = %d \n\r",ERROR_CODE);
 			
 			/* Save packet to pending log - if packet not sent succesful */
 			if((responseStatus == MODEM_RESPONSE_TIMEOUT) ||
@@ -468,6 +472,7 @@ void PacketLog ( void )
 					DELAY_ms(1000);
 					ShutDownModule();
 					LCD_Clear();
+					print_DebugMsg(" ModShtDwn \n\r");
 					LCD_GoToLine(0);LCD_Printf("ModShtDwn");
 					DELAY_ms(1000);	
 					}
@@ -478,7 +483,7 @@ void PacketLog ( void )
 				 
 /***********************************************************************************************/
 			
-			if (responseStatus || returnStatus) {
+			if ( (responseStatus || returnStatus ) && (PlogCreate == 0)) {
 				
 				if (Check_LocalIP()) {
 					if (Query_Set_CLTS()) {		/* update network date and time */
@@ -508,11 +513,9 @@ void PacketLog ( void )
 //					}
 //					console_log("GPSCheck: %d\n\r",GPSCheck);
 //				}
-				
-			}
-			
-/***********************************************************************************************/
-			#if _PP_SMS_INIT
+
+			/***********************************/
+						#if _PP_SMS_INIT
 			SMS_READ_Setting();									/* SET SMS setting */
 			readSMS();													/* Read SMS */
       #endif
@@ -521,6 +524,11 @@ void PacketLog ( void )
 			DELAY_ms(100);
 
 			Module_sleep_mode();								/* put GSM module in Sleep mode */	
+			/***********************************/	
+			}
+			
+/***********************************************************************************************/
+
 			UART1_DisableBuffer_Interrupt(); 		/* Disable Buffer RBR UART 1 interrupt */
 			
 			//lcd_disable();

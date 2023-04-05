@@ -21,3 +21,5 @@
 .\objects\rain.o: .\DRIVERS\inlcude\extintr.h
 .\objects\rain.o: .\DRIVERS\inlcude\IOExtInt.h
 .\objects\rain.o: .\DRIVERS\inlcude\eeprom.h
+.\objects\rain.o: .\DRIVERS\inlcude\Log.h
+.\objects\rain.o: .\DRIVERS\inlcude\mmc_176x_ssp.h
