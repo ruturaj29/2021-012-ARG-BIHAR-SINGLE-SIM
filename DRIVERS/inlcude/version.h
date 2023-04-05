@@ -54,6 +54,13 @@
 
 /** === REVISION HISTORY ===
 
+		\version ARG.2.4.6
+			@Added SD card log while rain reset at 8.15 in calcRainFall() function in rain.c file @line93 rain.c
+			@Added Rain Interrupt attached before PacketLog() @line595 in main.c
+			@Added ERROR_CODE = 99; @line1520 in gprs.c after "Post Success !!", So that if Post sucess 
+						 updated then at failed packet DL will not go in GPS and Get timw loop ModShtDwn will get
+						 escaped in 20 to 30 Secs
+
 	  \version ARG.2.2.3 
 			@Added if(!(strstr(UART1Buffer,",")))	check for +CMGR response 2.2.2 UNREAD @line2246 gprs.c
 				// Log.c Line 470 Module Shut Down;
